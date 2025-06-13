@@ -3,7 +3,6 @@
 namespace App\Utils;
 
 use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
