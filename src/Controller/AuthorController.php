@@ -14,6 +14,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Utils\ValidationErrorHandler;
 
 #[Route('api/authors')]
 final class AuthorController extends AbstractController
@@ -64,9 +66,12 @@ final class AuthorController extends AbstractController
     }
 
     #[Route('', name: "createAuthor", methods: ['POST'])]
-    public function createAuthor(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator) : JsonResponse
+    public function createAuthor(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator) : JsonResponse
     {
         $author = $serializer->deserialize($request->getContent(), Author::class, 'json');
+
+        $errors = $validator->validate($author); 
+        ValidationErrorHandler::handle($errors);
 
         $em->persist($author);
         $em->flush(); //applies the change to the database

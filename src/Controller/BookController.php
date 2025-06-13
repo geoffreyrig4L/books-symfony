@@ -15,6 +15,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Utils\ValidationErrorHandler;
 
 #[Route('/api/books')]
 final class BookController extends AbstractController
@@ -32,7 +35,7 @@ final class BookController extends AbstractController
     public function getBookById(?Book $book, SerializerInterface $serializer): JsonResponse
     {
         if (!$book) {
-            return new JsonResponse(['error' => 'Book not found'], Response::HTTP_NOT_FOUND);
+            throw new HttpException(Response::HTTP_NOT_FOUND, 'Livre introuvable');
         }
 
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
@@ -43,7 +46,7 @@ final class BookController extends AbstractController
     public function deleteBookById(?Book $book, EntityManagerInterface $em): JsonResponse
     {
         if (!$book) {
-            return new JsonResponse(['error' => 'Book not found'], Response::HTTP_NOT_FOUND);
+            throw new HttpException(Response::HTTP_NOT_FOUND, 'Livre introuvable');
         }
 
         $em->remove($book);
@@ -53,9 +56,8 @@ final class BookController extends AbstractController
     }
     
     #[Route('', name:"createBook", methods: ['POST'])]
-    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository): JsonResponse 
+    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse 
     {
-
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
         
         $content = $request->toArray();
@@ -63,6 +65,9 @@ final class BookController extends AbstractController
         
         $book ->setAuthor($authorRepository->find($idAuthor)); //permet de lier le livre à un auteur
  
+        $errors = $validator->validate($book); //valide l'objet Book
+        ValidationErrorHandler::handle($errors); //gère les erreurs de validation
+
         $em->persist($book);
         $em->flush(); //applique la modification dans la base de données
 
@@ -77,7 +82,7 @@ final class BookController extends AbstractController
     public function updateBookById(Request $request, SerializerInterface $serializer, ?Book $currentBook, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse
     {
         if (!$currentBook) {
-            return new JsonResponse(['error' => 'Book not found'], Response::HTTP_NOT_FOUND);
+            throw new HttpException(Response::HTTP_NOT_FOUND, 'Livre introuvable');
         }
 
         $newBook = $serializer->deserialize($request->getContent(), Book::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentBook]); //le dernier paramètre est une clé, elle permet de mettre à jour un objet existant au lieu d'en créer un nouveau
