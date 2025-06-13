@@ -73,14 +73,14 @@ final class BookController extends AbstractController
         return new JsonResponse($jsonBook, Response::HTTP_CREATED, ["Location" => $location], true);
    }
 
-       #[Route('/{id}', name: 'updateBook', methods: ['PUT'])]
+    #[Route('/{id}', name: 'updateBook', methods: ['PUT'])]
     public function updateBookById(Request $request, SerializerInterface $serializer, ?Book $currentBook, EntityManagerInterface $em, AuthorRepository $authorRepository): JsonResponse
     {
         if (!$currentBook) {
             return new JsonResponse(['error' => 'Book not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $newBook = $serializer->deserialize($request->getContent(), Book::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentBook]);
+        $newBook = $serializer->deserialize($request->getContent(), Book::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentBook]); //le dernier paramètre est une clé, elle permet de mettre à jour un objet existant au lieu d'en créer un nouveau
 
         $content = $request->toArray();
         $idAuthor = $content['idAuthor'] ?? -1;
